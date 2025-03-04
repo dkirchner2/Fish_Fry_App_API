@@ -7,7 +7,9 @@ const pool = new Pool({
     database: 'fishfrydb',
     password: process.env.DB_PASSWORD,
     port: process.env.DB_PORT,
-    ssl: process.env.DB_SSL === `true`
+    ssl: {
+        rejectUnauthorized: false
+      }
 });
 
 module.exports = {
