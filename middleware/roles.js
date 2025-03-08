@@ -8,9 +8,11 @@ async function isAdmin(req, res, next) {
         if (!authHeader) {
             return res.sendStatus(401);
         }
-        const cookie = authHeader.split("=")[1];
+        let cookie = authHeader.split("SessionID=")[1];
+        cookie = cookie.split(';')[0];
         jwt.verify(cookie, process.env.SECRET_ACCESS_TOKEN, async (err, decoded) => {
             if (err) {
+                console.log(err);
                 return res
                     .status(401)
                     .json({ message: "This session has expired. Please login" });

@@ -11,6 +11,7 @@ async function verify(req, res, next) {
         cookie = cookie.split(';')[0];
         jwt.verify(cookie, process.env.SECRET_ACCESS_TOKEN, async (err, decoded) => {
             if (err) {
+                console.log(err);
                 return res
                     .status(401)
                     .json({ message: "This session has expired. Please login" });

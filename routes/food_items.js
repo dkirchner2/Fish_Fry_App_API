@@ -26,8 +26,8 @@ router.get('/meals', verify, async (req, res) => {
 
 router.post('/', verify, isAdmin, async (req, res) => {
     try {
-        const { name, price, type, deleted } = req.body;
-        const result = await db.query('INSERT INTO fooditems (name, price, type, deleted, created, updated) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING *', [name, price, type, deleted]);
+        const { name, price, type, mealprice, deleted } = req.body;
+        const result = await db.query('INSERT INTO fooditems (name, price, type, mealprice, deleted, created, updated) VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING *', [name, price, type, mealprice, deleted]);
         res.status(200).json({message: `Food item with ID ${result.rows[0].foodid} added successfully`});
     } catch (err) {
         console.log(err);
@@ -38,8 +38,8 @@ router.post('/', verify, isAdmin, async (req, res) => {
 router.put('/:id', verify, isAdmin, async (req, res) => {
     const foodID = parseInt(req.params.id);
     try {
-        const { name, price, type, deleted } = req.body;
-        const result = await db.query('UPDATE fooditems SET name = $1, price = $2, type = $3, deleted = $4, updated = CURRENT_TIMESTAMP WHERE foodid = $5', [name, price, type, deleted, foodID]);
+        const { name, price, type, mealprice, deleted } = req.body;
+        const result = await db.query('UPDATE fooditems SET name = $1, price = $2, type = $3, mealprice = $4, deleted = $5, updated = CURRENT_TIMESTAMP WHERE foodid = $6', [name, price, type, mealprice, deleted, foodID]);
         res.status(200).json({message: `Food item with ID ${foodID} successfully updated`})
     } catch (err) {
         console.log(err);
