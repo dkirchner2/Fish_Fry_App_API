@@ -3,6 +3,7 @@ const pool = require('../db').db;
 const db = pool;
 const router = express.Router();
 const verify = require('../middleware/verify.js');
+const isAdmin = require('../middleware/roles.js');
 
 function getAlacarteSQL(orderID, alacarteItems) {
     sql = 'INSERT INTO orderitems (orderid, foodid, created, updated) VALUES ';
@@ -126,6 +127,34 @@ router.get('/active', verify, async (req, res) => {
         console.log(err);
         await client.query('ROLLBACK');
         res.status(500).json({message: 'Error fetching orders'});
+    } finally {
+        client.release();
+    }
+});
+
+router.get('/stats', verify, isAdmin, async(req, res) => {
+    const { startDate, endDate } = req.query;
+    console.log('start date: ', startDate);
+    console.log('end date: ', endDate);
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const totals = await client.query("select ordertype, paymenttype, count(*) as count, sum(totalprice) as total from orders where created >= $1 and created <= $2 group by ordertype, paymenttype", [startDate, endDate]);
+        const counts = await client.query(`SELECT count(*), ordertype, f.name as foodname, mi.mealfoodname
+            FROM orders o INNER JOIN orderitems i ON o.orderid = i.orderid 
+            INNER JOIN fooditems f ON i.foodid = f.foodid 
+            LEFT JOIN meals m ON m.orderitemid = i.orderitemid
+            left join (SELECT mm.mealid, fm.name AS mealfoodname, fm.type as mealfoodtype FROM mealitems mm INNER JOIN fooditems fm ON mm.foodid = fm.foodid) mi
+            on m.mealid = mi.mealid
+            where type = 'entree' or mi.mealfoodtype = 'entree'
+            and o.created >= $1 and o.created <= $2
+            group by ordertype, foodname, mealfoodname`, [startDate, endDate]);
+        await client.query('COMMIT');
+        res.status(200).json({totals: totals.rows, counts: counts.rows})
+    } catch (err) {
+        console.log(err);
+        await client.query('ROLLBACK');
+        res.status(500).json({message: 'Error fetching stats'});
     } finally {
         client.release();
     }
