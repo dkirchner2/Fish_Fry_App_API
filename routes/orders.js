@@ -180,12 +180,16 @@ router.post('/', verify, async (req, res) => {
     try {
          await client.query('BEGIN');
          const result = await client.query('INSERT INTO orders (name, ordertype, totalprice, paymenttype, status, created, updated) VALUES ($1, $2, $3, $4, $5, current_timestamp, current_timestamp) RETURNING *', [name, orderType, totalPrice, paymentType, status])
-         const alacarteSQL = getAlacarteSQL(result.rows[0].orderid, alacarteItems);
-         await client.query(alacarteSQL);
-         const sqlArr = getMealSQL(result.rows[0].orderid, mealItems);
-         for (const query of sqlArr) {
-             await client.query(query);
+         if (alacarteItems.length > 0) {
+            const alacarteSQL = getAlacarteSQL(result.rows[0].orderid, alacarteItems);
+            await client.query(alacarteSQL);
          }
+            if (mealItems.length > 0) {
+            const sqlArr = getMealSQL(result.rows[0].orderid, mealItems);
+            for (const query of sqlArr) {
+                await client.query(query);
+            }
+        }
          await client.query('COMMIT');
          res.status(200).json({message: `Successfully added order with id ${result.rows[0].orderid}`});
     } catch (err) {
